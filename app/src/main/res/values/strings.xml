@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">NoteTaker</string>
+    <string name="create_sample_data">Create sample data</string>
+    <string name="delete_all_notes">Delete all notes</string>
+    <string name="all_deleted">All notes deleted</string>
+    <string name="are_you_sure">Are you sure you want to delete all notes?</string>
 </resources>
