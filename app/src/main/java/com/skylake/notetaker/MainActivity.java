@@ -5,21 +5,25 @@ import android.app.LoaderManager;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.widget.CursorAdapter;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
 implements LoaderManager.LoaderCallbacks<Cursor>{
 
+    private static final int EDITOR_REQUEST_CODE = 1;
     private CursorAdapter cursor_adapter;
 
     @Override
@@ -27,13 +31,20 @@ implements LoaderManager.LoaderCallbacks<Cursor>{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        String[] from = {DBOpenHelper.NOTE_TEXT};
-        int[] to = {android.R.id.text1};
-        cursor_adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1,
-                null, from, to, 0);
+        cursor_adapter = new NotesCursorAdapater(this, null, 0);
 
         ListView list_view = (ListView) findViewById(R.id.list_view);
         list_view.setAdapter(cursor_adapter);
+
+        list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent edit_note_intent = new Intent(MainActivity.this, EditorActivity.class);
+                Uri uri = Uri.parse(NoteProvider.CONTENT_URI + "/" + id);
+                edit_note_intent.putExtra(NoteProvider.CONTENT_ITEM_TYPE, uri);
+                startActivityForResult(edit_note_intent, EDITOR_REQUEST_CODE);
+            }
+        });
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -50,6 +61,13 @@ implements LoaderManager.LoaderCallbacks<Cursor>{
         Log.d("MainActivity", "Inserted note " + note_uri.getLastPathSegment());
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
@@ -116,5 +134,17 @@ implements LoaderManager.LoaderCallbacks<Cursor>{
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         cursor_adapter.swapCursor(null);
+    }
+
+    public void openEditorForNewNote(View view) {
+        Intent intent = new Intent(this, EditorActivity.class);
+        startActivityForResult(intent, EDITOR_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int request_code, int result_code, Intent data) {
+        if (request_code == EDITOR_REQUEST_CODE && result_code == RESULT_OK) {
+            restartLoader();
+        }
     }
 }
